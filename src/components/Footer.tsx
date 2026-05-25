@@ -74,7 +74,7 @@ export default function Footer() {
           <div className="md:col-span-5 space-y-6">
             <div className="flex items-center">
               <img
-                src="/logo.jpg"
+                src="/FS.jpg"
                 alt="Fluency Sprint"
                 className="h-14 w-14 rounded-full object-cover"
               />

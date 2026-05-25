@@ -88,7 +88,7 @@ export default function Navbar({ activeSection, setActiveSection }: NavbarProps)
           className="flex items-center gap-3 group focus:outline-none"
         >
           <img
-            src="/logo.jpg"
+            src="/FS.jpg"
             alt="Fluency Sprint"
             className="h-12 md:h-14 w-12 md:w-14 rounded-full object-cover transition-opacity duration-300 group-hover:opacity-90"
           />
