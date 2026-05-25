@@ -1,0 +1,6 @@
+{
+  "name": "Fluency Sprint",
+  "description": "Fluency Sprint helps learners achieve English fluency faster through immersive, modern, and practical learning experiences designed for real-world communication.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
