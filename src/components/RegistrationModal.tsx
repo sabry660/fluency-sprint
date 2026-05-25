@@ -9,7 +9,6 @@ import {
   Check,
   ShieldCheck,
   ArrowRight,
-  Settings,
   Loader2,
   Upload,
   ImageIcon,
@@ -17,11 +16,12 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
+import { Course, RegistrationFormData } from '../types';
+import { submitEnrollment } from '../lib/submitEnrollment';
+import { motion, AnimatePresence } from 'motion/react';
+
 const INSTAPAY_LINK = 'https://ipn.eg/S/alielbshbishy/instapay/7IVK1s';
 const INSTAPAY_USERNAME = 'alielbshbishy@instapay';
-import { Course, RegistrationFormData } from '../types';
-import GoogleSheetsInstructions from './GoogleSheetsInstructions';
-import { motion, AnimatePresence } from 'motion/react';
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
 const ACCEPTED_EXTENSIONS = ['.jpg', '.jpeg', '.png'];
@@ -54,10 +54,6 @@ export default function RegistrationModal({
   const [paymentPreview, setPaymentPreview] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [googleSheetsUrl, setGoogleSheetsUrl] = useState(
-    'https://script.google.com/macros/s/AKfycbwo3Wg_O0H0UX27FoeAlH5ECoAjwVCwfP3Hoka8uI8YwnWCPwG8A7ryxBtVMeqLbqi7/exec'
-  );
-  const [showSettings, setShowSettings] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -173,39 +169,23 @@ export default function RegistrationModal({
     setIsSubmitting(true);
     setErrorText(null);
 
-    const targetUrl =
-      googleSheetsUrl.trim() ||
-      'https://script.google.com/macros/s/AKfycbwo3Wg_O0H0UX27FoeAlH5ECoAjwVCwfP3Hoka8uI8YwnWCPwG8A7ryxBtVMeqLbqi7/exec';
+    const courseTitle = selectedCourse?.title ?? formData.courseId;
 
-    const courseTitle = selectedCourse ? selectedCourse.title : formData.courseId;
+    const result = await submitEnrollment({
+      name: formData.fullName,
+      email: formData.email,
+      phone: formData.phone.replace(/\s/g, ''),
+      course: courseTitle,
+    });
 
-    try {
-      const payload = {
-        name: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        course: courseTitle,
-        paymentScreenshot: paymentFile?.name ?? '',
-        paymentScreenshotRef: paymentPreview
-          ? `${paymentFile?.name} (${Math.round((paymentFile?.size ?? 0) / 1024)}KB uploaded)`
-          : '',
-      };
+    setIsSubmitting(false);
 
-      await fetch(targetUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+    if (result.ok) {
       setStep('success');
-    } catch (err) {
-      console.error('Apps script post failed:', err);
-      setErrorText('Something went wrong. Please try again.');
-    } finally {
-      setIsSubmitting(false);
+      return;
     }
+
+    setErrorText(result.error ?? 'Submission failed. Please try again.');
   };
 
   if (!isOpen) return null;
@@ -243,7 +223,7 @@ export default function RegistrationModal({
               </div>
               <div className="space-y-2">
                 <h3 className="text-2xl md:text-3xl font-display font-medium text-white tracking-tight">
-                  Enrollment Submitted Successfully
+                  You have successfully enrolled in Fluency Sprint!
                 </h3>
                 <p className="text-sm font-sans text-brand-cyan font-medium">
                   {selectedCourse?.title} — {formData.fullName}
@@ -276,44 +256,16 @@ export default function RegistrationModal({
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowSettings(!showSettings)}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all ${
-                      showSettings
-                        ? 'border-brand-cyan/40 bg-brand-cyan/5 text-brand-cyan'
-                        : 'border-white/10 text-white/50 hover:text-white'
-                    }`}
-                    title="Configure Google Sheets"
-                  >
-                    <Settings className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleClose}
-                    className="w-8 h-8 rounded-full flex items-center justify-center border border-white/10 hover:border-white/35 bg-white/5 hover:bg-white/10 text-white transition-all"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
+                <button
+                  onClick={handleClose}
+                  className="w-8 h-8 rounded-full flex items-center justify-center border border-white/10 hover:border-white/35 bg-white/5 hover:bg-white/10 text-white transition-all"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
               <div className="p-6 md:p-8 overflow-y-auto flex-grow space-y-6">
-                {showSettings && (
-                  <div className="p-4 rounded-xl border border-brand-cyan/20 bg-brand-cyan/2 flex flex-col gap-3">
-                    <span className="text-xs font-accent font-bold text-brand-cyan tracking-wider uppercase">
-                      Google Sheets API Endpoint
-                    </span>
-                    <input
-                      type="url"
-                      placeholder="https://script.google.com/macros/s/.../exec"
-                      value={googleSheetsUrl}
-                      onChange={(e) => setGoogleSheetsUrl(e.target.value)}
-                      className="w-full bg-black/40 border border-white/10 focus:border-brand-cyan text-xs font-mono py-2.5 px-3 rounded-lg text-gray-300 placeholder-gray-600 focus:outline-none"
-                    />
-                    <GoogleSheetsInstructions />
-                  </div>
-                )}
-
                 {step === 'payment' && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -463,20 +415,31 @@ export default function RegistrationModal({
                         Selected Course
                       </label>
                       <div className="relative">
-                        <BookOpen className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                        <select
-                          id="reg-courseId"
-                          name="courseId"
-                          value={formData.courseId}
-                          onChange={handleInputChange}
-                          className="w-full bg-brand-dark-950 border border-white/10 py-3 pl-11 pr-4 rounded-xl text-sm text-white focus:outline-none focus:border-brand-cyan h-11"
-                        >
-                          {availableCourses.map((c) => (
-                            <option key={c.id} value={c.id} className="bg-brand-dark-900">
-                              {c.title} — {c.price}
-                            </option>
-                          ))}
-                        </select>
+                        <BookOpen className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                        {course ? (
+                          <input
+                            id="reg-course-display"
+                            type="text"
+                            readOnly
+                            value={`${selectedCourse?.title ?? ''} — ${selectedCourse?.price ?? ''}`}
+                            className="w-full bg-brand-dark-950/80 border border-brand-cyan/20 py-3 pl-11 pr-4 rounded-xl text-sm text-brand-cyan cursor-default focus:outline-none h-11"
+                            aria-readonly="true"
+                          />
+                        ) : (
+                          <select
+                            id="reg-courseId"
+                            name="courseId"
+                            value={formData.courseId}
+                            onChange={handleInputChange}
+                            className="w-full bg-brand-dark-950 border border-white/10 py-3 pl-11 pr-4 rounded-xl text-sm text-white focus:outline-none focus:border-brand-cyan h-11"
+                          >
+                            {availableCourses.map((c) => (
+                              <option key={c.id} value={c.id} className="bg-brand-dark-900">
+                                {c.title} — {c.price}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </div>
                     </div>
 

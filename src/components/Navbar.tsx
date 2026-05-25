@@ -10,6 +10,7 @@ interface NavbarProps {
 export default function Navbar({ activeSection, setActiveSection }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [logoPreviewOpen, setLogoPreviewOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -45,6 +46,19 @@ export default function Navbar({ activeSection, setActiveSection }: NavbarProps)
     };
   }, [mobileMenuOpen]);
 
+  useEffect(() => {
+    if (!logoPreviewOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLogoPreviewOpen(false);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [logoPreviewOpen, mobileMenuOpen]);
+
   const handleNavClick = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -76,21 +90,23 @@ export default function Navbar({ activeSection, setActiveSection }: NavbarProps)
       id="main-navbar"
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled
-          ? 'py-3 bg-brand-dark-950/65 backdrop-blur-xl border-b border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5)]'
-          : 'py-6 bg-transparent border-b border-white/0'
+          ? 'py-3.5 bg-brand-dark-950/65 backdrop-blur-xl border-b border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5)]'
+          : 'py-5 md:py-6 bg-transparent border-b border-white/0'
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
         {/* Logo and Branding */}
         <button
           id="nav-logo-btn"
-          onClick={() => handleNavClick('home')}
-          className="flex items-center gap-3 group focus:outline-none"
+          type="button"
+          onClick={() => setLogoPreviewOpen(true)}
+          className="flex items-center gap-3 group focus:outline-none cursor-pointer"
+          aria-label="View full Fluency Sprint logo"
         >
           <img
             src="/FS.jpg"
             alt="Fluency Sprint"
-            className="h-12 md:h-14 w-12 md:w-14 rounded-full object-cover transition-opacity duration-300 group-hover:opacity-90"
+            className="h-16 md:h-[4.5rem] w-16 md:w-[4.5rem] rounded-full object-cover ring-2 ring-white/10 transition-all duration-300 group-hover:opacity-90 group-hover:ring-brand-cyan/40 group-hover:shadow-[0_0_20px_rgba(0,242,254,0.25)]"
           />
         </button>
 
@@ -162,6 +178,52 @@ export default function Navbar({ activeSection, setActiveSection }: NavbarProps)
               })}
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Full logo preview */}
+      <AnimatePresence>
+        {logoPreviewOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-8">
+            <motion.button
+              type="button"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setLogoPreviewOpen(false)}
+              className="absolute inset-0 bg-brand-dark-950/90 backdrop-blur-md cursor-zoom-out"
+              aria-label="Close logo preview"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.92 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+              className="relative z-10 w-full max-w-lg md:max-w-2xl"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Fluency Sprint full logo"
+            >
+              <button
+                type="button"
+                onClick={() => setLogoPreviewOpen(false)}
+                className="absolute -top-2 -right-2 md:top-0 md:right-0 z-20 w-10 h-10 rounded-full border border-white/15 bg-brand-dark-900/90 flex items-center justify-center text-white hover:border-brand-cyan/50 hover:text-brand-cyan transition-all"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="glass-panel rounded-2xl md:rounded-3xl border border-white/10 bg-brand-dark-900/95 p-4 md:p-6 shadow-[0_0_60px_rgba(0,242,254,0.12)]">
+                <img
+                  src="/FS.jpg"
+                  alt="Fluency Sprint Academy — full logo"
+                  className="w-full h-auto rounded-xl object-contain"
+                />
+                <p className="mt-4 text-center text-[10px] md:text-xs font-accent text-gray-500 uppercase tracking-widest">
+                  Fluency Sprint Academy
+                </p>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </header>
